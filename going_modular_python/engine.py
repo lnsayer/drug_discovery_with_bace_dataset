@@ -356,6 +356,7 @@ def run_model_repeats(model_callable: Callable[[], torch.nn.Module],
                       nb_repeats: int = 1,
                       window_size: int = 10,
                       patience: int = 50,
+                      learning_rate: float = 0.001,
                       **model_kwargs):
   """
     Runs multiple training sessions for the specified model and optionally saves the models and results.
@@ -382,14 +383,14 @@ def run_model_repeats(model_callable: Callable[[], torch.nn.Module],
 
   for i in range(nb_repeats):
     if models_directory:
-      model_save_name = f"{i}_{num_hidden_channels}_{nb_epochs}_{pool_method.__name__}.pth"
+      model_save_name = f"{i}_{num_hidden_channels}_{nb_epochs}_{learning_rate}_{pool_method.__name__}.pth"
       model_save_path  = models_directory / model_save_name
     else:
       model_save_path = None
     model = model_callable(num_hidden_channels = num_hidden_channels,
                            pool_method = pool_method,
                            **model_kwargs)
-    optimizer = optimizer_(model.parameters())
+    optimizer = optimizer_(model.parameters(), lr = learning_rate)
 
     results = train(model,
         device,
@@ -404,7 +405,7 @@ def run_model_repeats(model_callable: Callable[[], torch.nn.Module],
         window_size=window_size,
         patience=patience)
     if models_directory:
-      with open(models_directory/f"{i}_{num_hidden_channels}_{nb_epochs}_{pool_method.__name__}_results.pkl", 'wb') as f:
+      with open(models_directory/f"{i}_{num_hidden_channels}_{nb_epochs}_{learning_rate}_{pool_method.__name__}_results.pkl", 'wb') as f:
         print("Saved results of this model")
         pickle.dump(results, f)
     else:

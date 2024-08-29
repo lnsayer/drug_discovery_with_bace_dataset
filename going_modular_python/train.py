@@ -77,7 +77,9 @@ run_model_repeats(model_callable = ginconv_callable,
                   window_size = 10,
                   patience = 50,
                   num_features=30,
+                  learning_rate = 0.0001,
                   num_hidden_channels=128,
                   num_out_channels=2,
                   pool_method=global_mean_pool, 
-                  num_layers=3)
+                  num_layers=3
+                  )

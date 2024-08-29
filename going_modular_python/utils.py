@@ -122,10 +122,7 @@ def new_metric_func(model, train_dataloader, test_dataloader, batch_size = 32,th
             current_batch_size= len(batch)
             out = model(batch)
             train_probs = out[:, 1]
-            if threshold == 0.5:
-                train_preds = torch.argmax(out, dim=1)
-            else:
-                train_preds = (train_probs >= threshold).long()
+            train_preds = (train_probs >= threshold).long()
 
             total_train_probs[idx * batch_size:idx * batch_size + current_batch_size] = train_probs
             total_train_preds[idx * batch_size:idx * batch_size + current_batch_size] = train_preds
@@ -136,10 +133,7 @@ def new_metric_func(model, train_dataloader, test_dataloader, batch_size = 32,th
             current_batch_size = len(batch)
             out = model(batch)
             test_probs = out[:, 1]
-            if threshold == 0.5:
-                test_preds = torch.argmax(out, dim=1)
-            else:
-                test_preds = (test_probs >= threshold).long()
+            test_preds = (test_probs >= threshold).long()
 
             total_test_probs[idx * batch_size:idx * batch_size + current_batch_size] = test_probs
             total_test_preds[idx * batch_size:idx * batch_size + current_batch_size] = test_preds
@@ -328,41 +322,50 @@ def loss_acc_auc_plots(results:dict):
 
 #--------------------------------------------------------------------plot_average_metrics--------------------------------------------------------------------
 
-
-
-def plot_average_metrics(models_paths_list, metric_filenames, desired_metrics):
+def plot_average_metrics(suffixes, models_paths_list, model_names_list, desired_metrics, bar_width, show_legend, fontsize, tick_labelsize):
     """
-    Calculates and returns the average performance metrics for a list of GNN model architectures.
+    Calculates and plots the average performance metrics for a list of GNN model architectures.
 
     This function loads performance metrics for multiple trained model instances from their respective directories,
-    computes the mean and standard deviation of key metrics (AUROC, precision, recall), and plots the results. The
-    function returns DataFrames containing the calculated metrics and their associated errors.
+    computes the mean and standard deviation of key metrics (such as AUROC, precision, recall, accuracy, f1-score, and support),
+    and plots the results. The function returns DataFrames containing the calculated metrics and their associated errors.
 
     Args:
+        suffixes (Dict[str, str]): A dictionary mapping metric types (e.g., 'auroc', 'mean_train') to their corresponding file suffixes.
+                                   The function will search for files ending with these suffixes in the provided model paths.
         models_paths_list (List[Path]): A list of paths to the directories containing the trained model instances.
-        metric_filenames (Dict[str, str]): A dictionary mapping metric names to their corresponding pickle file names.
-                                           Expected keys are 'auroc', 'mean_train', 'mean_test', 'std_train', and 'std_test'.
-        desired_metrics (List): A list of the metrics desired in the plot, to choose from: 
+        model_names_list (List[str]): A list of strings to the name the bars on the bar plot
+        desired_metrics (List[str]): A list of metrics to include in the plot, selected from the available metrics.
+        bar_width (float): The width of the bars in the plot.
+        show_legend (bool): Whether to display the legend in the plot.
+        fontsize (int): The font size for the plot labels.
+        tick_labelsize (int): The font size for the tick labels on the plot axes.
 
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]:
-            - DataFrame containing the average performance metrics (AUROC, precision, recall) for the test dataset across models.
+            - DataFrame containing the average performance metrics (AUROC, precision, recall, accuracy, f1-score, support)
+              for the test dataset across models.
             - DataFrame containing the standard errors for the same metrics.
 
     Example Usage:
-        metrics_filenames = {
-            'auroc': "128_300_global_mean_pool_auroc_df.pkl",
-            'mean_train': "128_300_global_mean_pool_mean_train_metrics.pkl",
-            'mean_test': "128_300_global_mean_pool_mean_test_metrics.pkl",
-            'std_train': "128_300_global_mean_pool_std_train_metrics.pkl",
-            'std_test': "128_300_global_mean_pool_std_test_metrics.pkl"
+        suffixes = {
+            'auroc': "_auroc_df.pkl",
+            'mean_train': "_mean_train_metrics.pkl",
+            'mean_test': "_mean_test_metrics.pkl",
+            'std_train': "_std_train_metrics.pkl",
+            'std_test': "_std_test_metrics.pkl"
         }
 
         models_metrics_df, models_metrics_error_df = plot_average_metrics(
+            suffixes,
             [bace_gcn_models_path, bace_gat_models_path, bace_graphconv_models_path, bace_ginconv_models_path, 
             bace_gat_edge_models_path, bace_gineconv_models_path],
-            metrics_filenames,
-            ["precision", "recall", "accuracy"]
+            ["GCN", "GAT", "GraphConv", "GAT Edge", "GIN Conv", "GINE Conv"],
+            ["precision", "recall", "accuracy"],
+            bar_width=0.35,
+            show_legend=True,
+            fontsize=12,
+            tick_labelsize=10
         )
     """
     # Initialize empty DataFrames to store metrics and errors
@@ -372,16 +375,36 @@ def plot_average_metrics(models_paths_list, metric_filenames, desired_metrics):
     # Define the metrics to extract
     metric_names = ["auroc", "precision", "recall", "accuracy", "f1-score", "support"]
 
+    
+    # Name the bars
+    models_names_dictionaries = {}
+    for i in range(len(models_paths_list)):
+        models_names_dictionaries[models_paths_list[i]] = model_names_list[i]
+
     # Loop through each model's path and compute metrics
     for i, model_path in enumerate(models_paths_list):
         model_path = Path(model_path)
 
+        # Function to find the correct file in the directory
+        def find_file(suffix):
+            files = list(model_path.glob(f"*{suffix}"))
+            if len(files) != 1:
+                raise ValueError(f"Expected one file ending with {suffix} in {model_path}, but found {len(files)}.")
+            return files[0]
+
+        # Find the correct files based on the suffixes
+        auroc_file = find_file(suffixes['auroc'])
+        mean_train_file = find_file(suffixes['mean_train'])
+        mean_test_file = find_file(suffixes['mean_test'])
+        std_train_file = find_file(suffixes['std_train'])
+        std_test_file = find_file(suffixes['std_test'])
+
         # Load data
-        auroc_df = pd.read_pickle(model_path / metric_filenames['auroc'])
-        mean_train_metrics = pd.read_pickle(model_path / metric_filenames['mean_train'])
-        mean_test_metrics = pd.read_pickle(model_path / metric_filenames['mean_test'])
-        std_train_metrics = pd.read_pickle(model_path / metric_filenames['std_train'])
-        std_test_metrics = pd.read_pickle(model_path / metric_filenames['std_test'])
+        auroc_df = pd.read_pickle(auroc_file)
+        mean_train_metrics = pd.read_pickle(mean_train_file)
+        mean_test_metrics = pd.read_pickle(mean_test_file)
+        std_train_metrics = pd.read_pickle(std_train_file)
+        std_test_metrics = pd.read_pickle(std_test_file)
 
         # Extract metrics and errors
         metrics = {
@@ -400,13 +423,12 @@ def plot_average_metrics(models_paths_list, metric_filenames, desired_metrics):
             "test_accuracy": std_test_metrics["precision"].loc["accuracy"],
             "test_f1_score": std_test_metrics["f1-score"].iloc[-1] / (5**0.5),
             "test_support": std_test_metrics["support"].iloc[-1] / (5**0.5)
-
         }
 
         # Store metrics and errors
-        model_name = models_paths_list[i].name  # or some other way to name models
-        metrics_df[model_name] = metrics.values()
-        metrics_error_df[model_name] = errors.values()
+        model_name = models_names_dictionaries[models_paths_list[i]]
+        metrics_df[model_name] = list(metrics.values())
+        metrics_error_df[model_name] = list(errors.values())
 
     # Set index to the metric names
     metrics_df.index = metric_names
@@ -415,11 +437,17 @@ def plot_average_metrics(models_paths_list, metric_filenames, desired_metrics):
     # Plot metrics
     ax = metrics_df.loc[desired_metrics].plot.bar(
         yerr=metrics_error_df.loc[desired_metrics],
-        figsize=(10, 8)
+        figsize=(8, 4),
+        width=bar_width,
+        capsize=2
     )
-    ax.set_ylabel("Metric Value")
-    ax.set_xlabel("Metrics")
-    ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+    ax.tick_params(axis='both', labelsize=tick_labelsize)
+    ax.set_ylabel("Metric Value", fontsize=fontsize)
+    ax.set_xlabel("Models", fontsize=fontsize)
+
+    if show_legend:
+        ax.legend()
     plt.show()
 
     return metrics_df, metrics_error_df

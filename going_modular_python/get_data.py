@@ -3,7 +3,7 @@ import requests
 from pathlib import Path
 import pandas as pd
 
-project_path = Path("/home/louis/Documents/personal_coding/graph_neural_networks/bace_dataset/")
+project_path = Path("/home/louis/Documents/personal_coding/graph_neural_networks/drug_discovery_with_bace_dataset/")
 data_path = project_path / "data"
 bace_path = data_path / "raw"
 

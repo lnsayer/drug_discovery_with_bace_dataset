@@ -206,8 +206,8 @@ class GINConvClassifier(torch.nn.Module):
     for conv in self.convs:
       x = conv(x, edge_index).relu()
     x = self.pool_method(x, batch)
-    x = F.softmax(x, dim=1)
-    return self.mlp(x)
+    x = self.mlp(x)
+    return F.softmax(x, dim=1)
 
 #----------------------------------------------------------------------GINEConvClassifier----------------------------------------------------------------------
 
@@ -257,5 +257,59 @@ class GINEConvClassifier(torch.nn.Module):
         x = conv(x, edge_index).relu()
 
     x = self.pool_method(x, batch)
-    x = F.softmax(x, dim=1)
-    return self.mlp(x)
+    x = self.mlp(x)
+    return F.softmax(x, dim=1)
+  
+#----------------------------------------------------------------------MODIFIED_GINEConvClassifier----------------------------------------------------------------------
+
+
+class MODIFIED_GINEConvClassifier(torch.nn.Module):
+  """
+  Same as the GINConvClassifier, however also uses edge attributes of the graphs
+  """
+  def __init__(self, in_channels, hidden_channels, out_channels, num_layers, pool_method: torch_geometric.nn.pool,
+               use_edge_attr:bool, edge_dim:int):
+    """
+    Constructor method
+    Args:
+      in_channels : number of features of the graph's nodes
+      hidden_channels : the number of hidden neurons in the network. The "width" of the network
+      out_channels : the number of output features, i.e 2 for classification.
+      num_layers : the number of layers of the multi-layer perceptron
+      pool_method : the pooling method to obtain graph embedding from node embedding.
+      use_edge_attr : boolean variable to determine whether will use the edge attributes or not.
+      edge_dim : the dimensionality of the edge attributes for the graph's edges
+    """
+    super().__init__()
+
+    self.convs = torch.nn.ModuleList()
+    self.conv = GINEConv
+    self.pool_method = pool_method
+    self.use_edge_attr = use_edge_attr
+    self.edge_dim = edge_dim
+
+    for _ in range(num_layers):
+      mlp = MLP([in_channels, hidden_channels, hidden_channels])
+      self.convs.append(self.conv(nn=mlp, train_eps=False, edge_dim=self.edge_dim))
+      in_channels = hidden_channels
+
+    self.mlp = MLP([hidden_channels, hidden_channels, out_channels], norm = None, dropout = 0.5)
+
+  def forward(self, data):
+    """
+    Forward pass of the network
+      data : the input data containing node features, edge indices, and batch information
+    Returns probabilities of the two classes (drug/not drug) for the batch
+    """
+    x, edge_index, batch, edge_attr = data.x, data.edge_index, data.batch, data.edge_attr
+    for conv in self.convs:
+      if self.use_edge_attr:
+        x = conv(x, edge_index, edge_attr).relu()
+      else:
+        x = conv(x, edge_index).relu()
+
+    graph_embeddings = self.pool_method(x, batch)
+    x = self.mlp(graph_embeddings)
+    output = F.softmax(x, dim=1)
+
+    return output, graph_embeddings

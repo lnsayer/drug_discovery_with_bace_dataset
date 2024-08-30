@@ -317,8 +317,8 @@ def loss_acc_auc_plots(results:dict):
   ax[2].set_ylabel("AUC", size=14)
 
   ax[0].legend();
-  ax[1].legend();
-  ax[2].legend();
+  ax[1].legend(loc="lower right");
+  ax[2].legend(loc = "lower right");
 
 #--------------------------------------------------------------------plot_average_metrics--------------------------------------------------------------------
 

@@ -37,8 +37,8 @@ print(os.getcwd())
 total_import_time_end = timer()
 
 start_time = timer()
-dataset, train_dataset, test_dataset, train_dataloader, test_dataloader = create_dataloaders(root_directory = "graph_neural_networks/bace_dataset/data/",
-                                                                batch_size = 32, shuffled_indices_path  = "/home/louis/Documents/personal_coding/graph_neural_networks/bace_dataset/data/dataset_indices_list")
+dataset, train_dataset, test_dataset, train_dataloader, test_dataloader = create_dataloaders(root_directory = "graph_neural_networks/drug_discovery_with_bace_dataset/data/",
+                                                                batch_size = 32, shuffled_indices_path  = "/home/louis/Documents/personal_coding/graph_neural_networks/drug_discovery_with_bace_dataset/data/dataset_indices_list")
 end_time = timer()
 
 print("-------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -52,7 +52,7 @@ print(f"Created dataset, train_dataloader, test_dataloader, took {end_time - sta
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"device is {device}")
 
-bace_models_path = Path("/home/louis/Documents/personal_coding/graph_neural_networks/bace_dataset/models")
+bace_models_path = Path("/home/louis/Documents/personal_coding/graph_neural_networks/drug_discovery_with_bace_dataset/models")
 new_bace_ginconv_models_path = bace_models_path / "new_ginconv_models"
 
 
@@ -80,6 +80,6 @@ run_model_repeats(model_callable = ginconv_callable,
                   learning_rate = 0.0001,
                   num_hidden_channels=128,
                   num_out_channels=2,
-                  pool_method=global_mean_pool, 
+                  pool_method=global_mean_pool,
                   num_layers=3
                   )

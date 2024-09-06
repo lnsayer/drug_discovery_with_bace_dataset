@@ -145,12 +145,12 @@ def new_metric_func(model, train_dataloader, test_dataloader, batch_size = 32,th
         train_auroc = roc_auc_score(total_train_labels, total_train_probs).item()
         train_classification_report = classification_report(total_train_labels, total_train_preds, output_dict=True)
         train_report_df = pd.DataFrame(data=train_classification_report).transpose()
-        train_confusion_matrix = confusion_matrix(total_train_labels, total_train_preds, normalize='true')
+        train_confusion_matrix = confusion_matrix(total_train_labels, total_train_preds, normalize=None)
 
         test_auroc = roc_auc_score(total_test_labels, total_test_probs).item()
         test_classification_report = classification_report(total_test_labels, total_test_preds, output_dict=True)
         test_report_df = pd.DataFrame(data=test_classification_report).transpose()
-        test_confusion_matrix = confusion_matrix(total_test_labels, total_test_preds, normalize='true')
+        test_confusion_matrix = confusion_matrix(total_test_labels, total_test_preds, normalize=None)
 
     return train_auroc, test_auroc, train_report_df, test_report_df, train_confusion_matrix, test_confusion_matrix
         
@@ -409,8 +409,8 @@ def plot_average_metrics(suffixes, models_paths_list, model_names_list, desired_
         # Extract metrics and errors
         metrics = {
             "test_auroc": auroc_df["Test"].iloc[0],
-            "test_precision": mean_test_metrics["precision"].iloc[-1],
-            "test_recall": mean_test_metrics["recall"].iloc[-1],
+            "test_precision": mean_test_metrics["precision"].iloc[1],
+            "test_recall": mean_test_metrics["recall"].iloc[1],
             "test_accuracy": mean_test_metrics["precision"].loc["accuracy"],
             "test_f1_score": mean_test_metrics["f1-score"].iloc[-1],
             "test_support": mean_test_metrics["support"].iloc[-1]
@@ -418,8 +418,8 @@ def plot_average_metrics(suffixes, models_paths_list, model_names_list, desired_
 
         errors = {
             "test_auroc": auroc_df["Test"].iloc[1] / (5**0.5),
-            "test_precision": std_test_metrics["precision"].iloc[-1] / (5**0.5),
-            "test_recall": std_test_metrics["recall"].iloc[-1] / (5**0.5),
+            "test_precision": std_test_metrics["precision"].iloc[1] / (5**0.5),
+            "test_recall": std_test_metrics["recall"].iloc[1] / (5**0.5),
             "test_accuracy": std_test_metrics["precision"].loc["accuracy"],
             "test_f1_score": std_test_metrics["f1-score"].iloc[-1] / (5**0.5),
             "test_support": std_test_metrics["support"].iloc[-1] / (5**0.5)

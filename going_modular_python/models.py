@@ -68,6 +68,9 @@ class GCNClassifier(torch.nn.Module):
 
     return x
 
+#--------------------------------------------------------------------GraphConvCLassifier--------------------------------------------------------------------
+
+
 class GraphConvClassifier(GCNClassifier):
   """
   Same architecture as GCN Classifier however uses GraphConv layers

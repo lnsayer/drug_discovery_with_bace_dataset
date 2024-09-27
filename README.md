@@ -8,6 +8,6 @@ Currently all of the relevant code for creating the dataset, functions and runnn
 I have modularised the code by producing different .py files in [bace_dataset_going_modular.ipynb](https://github.com/lnsayer/personal_repo/tree/f086e5e44b9d2ff97b7a6a8d5bde15e061fd23fc/drug%20discovery%20with%20BACE%20dataset/going_modular) but working with these files is slower because Google Colabs must install
 PyTorch Geometric each time a package (dependent on it) is imported. I have also so far had trouble installing PyTorch Geometric locally. 
 
-My results are promising, with the GIN Conv convolutional layer (utilising edge attributes) achieving AUC scores of 96% on the test set, which is higher than results in the literature. 
+My results are promising, with the GIN Conv convolutional layer (utilising edge attributes) achieving AUC scores of 88.1% on the test set, which is 0.3% off the top results in the literature. 
 
 My next steps for the project are to investigate different pooling methods and to work with a larger, more complex dataset. 
